@@ -1,0 +1,6 @@
+[package]
+name = "to_webp"
+version = "0.1.0"
+authors = ["libo <libo@hujiang.com>"]
+
+[dependencies]
