@@ -4,3 +4,7 @@ version = "0.1.0"
 authors = ["libo <libo@hujiang.com>"]
 
 [dependencies]
+
+byteorder = "1"
+crc = "1.7.0"
+flate2 = "1.0"

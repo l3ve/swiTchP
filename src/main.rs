@@ -1,7 +1,6 @@
 mod png;
 
 fn main() {
-    let mut imgae = png::Img::new("./src/images/js.png");
-    // println!("{:?}", imgae);
-    let _file = png::Img::write("./src/images/rust.png", &mut imgae);
+    let mut images = png::Img::new("./src/images/white.png");
+    let _file = png::Img::create_png("./src/images/rust.png", &mut images);
 }
