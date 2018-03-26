@@ -14,10 +14,10 @@ use self::flate2::write::{ZlibDecoder, ZlibEncoder};
 
 const PNG_SIGNATURE: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 const NECESSARY_CHUCKS_NAME: [&str; 4] = ["IHDR", "PLTE", "IDAT", "IEND"];
-// const IHDR: [u8; 4] = [73, 72, 68, 82];
-// const PLTE: [u8; 4] = [80, 76, 84, 69];
-// const IDAT: [u8; 4] = [73, 68, 65, 84];
-// const IEND: [u8; 4] = [73, 69, 78, 68];
+const IHDR: [u8; 4] = [73, 72, 68, 82];
+const PLTE: [u8; 4] = [80, 76, 84, 69];
+const IDAT: [u8; 4] = [73, 68, 65, 84];
+const IEND: [u8; 4] = [73, 69, 78, 68];
 
 #[derive(Debug)]
 pub struct Img<'i> {
@@ -31,10 +31,36 @@ impl<'i> Img<'i> {
     // 去除 PNG_SIGNATURE
     data_buffer.drain(..8);
     let chucks = Img::chuck_data(&mut data_buffer);
-    let meta_data = Img::get_meta_data(chucks.get("IHDR").unwrap());
-    Img { chucks, meta_data }
+    let meta_data = Img::get_meta_data(chucks.get("IHDR").unwrap()[0].get("chuck").unwrap());
+    return Img { chucks, meta_data }
   }
-  pub fn create_png(url: &str, img: &mut Img) -> Result<File> {
+  pub fn create_png(url: &str, meta: &mut Vec<u8>, color: &mut Vec<u8>) -> Result<File> {
+    let mut file = File::create(url)?;
+    let mut buffer: Vec<u8> = Vec::new();
+    buffer.append(&mut PNG_SIGNATURE.to_vec());
+    // IHDR chuck
+    buffer.append(&mut vec![0, 0, 0, 13]);
+    buffer.append(&mut IHDR.to_vec());
+    buffer.append(&mut meta.clone());
+    let mut ihdr_crc_data = IHDR.to_vec();
+    ihdr_crc_data.append(meta);
+    buffer.append(&mut Img::crc(&ihdr_crc_data));
+    // IDAT chuck
+    buffer.append(&mut vec![0, 0, 0, 30]);
+    buffer.append(&mut IDAT.to_vec());
+    let mut zlib_color_data = Img::zlib_encoder(color).unwrap();
+    buffer.append(&mut zlib_color_data);
+    let mut idat_crc_data = IDAT.to_vec();
+    idat_crc_data.append(&mut zlib_color_data);
+    buffer.append(&mut Img::crc(&idat_crc_data));
+    // IEND chuck
+    buffer.append(&mut vec![0, 0, 0, 0]);
+    buffer.append(&mut IEND.to_vec());
+    buffer.append(&mut Img::crc(&IEND.to_vec()));
+    file.write(&buffer)?;
+    return Ok(file)
+  }
+  pub fn _zip_png(url: &str, img: &mut Img) -> Result<File> {
     let mut file = File::create(url)?;
     let mut buffer: Vec<u8> = Vec::new();
     buffer.append(&mut PNG_SIGNATURE.to_vec());
@@ -50,7 +76,7 @@ impl<'i> Img<'i> {
       }
     }
     file.write(&buffer)?;
-    Ok(file)
+    return Ok(file)
   }
   fn get_image_buffer(url: &str) -> Result<Vec<u8>> {
     let mut f = File::open(url)?;
@@ -63,8 +89,8 @@ impl<'i> Img<'i> {
       Img::zlib_decoder(img.chucks.get("IDAT").unwrap()[0].get("chuck").unwrap()).unwrap();
     return Img::filtering(&mut data, img);
   }
-  fn get_meta_data<'d>(ihdr: &Vec<HashMap<&str, Vec<u8>>>) -> HashMap<&'d str, u32> {
-    let mut data_buffer = ihdr[0].get("chuck").unwrap().clone();
+  fn get_meta_data<'d>(ihdr: &Vec<u8>) -> HashMap<&'d str, u32> {
+    let mut data_buffer = ihdr.clone();
     let mut meta_data = HashMap::new();
     let width_length = Img::transform_to_decimal(&data_buffer.drain(..4).collect());
     let height_length = Img::transform_to_decimal(&data_buffer.drain(..4).collect());
@@ -98,8 +124,8 @@ impl<'i> Img<'i> {
     };
     return xcomparison;
   }
-  fn crc(content: Vec<u8>) -> Vec<u8> {
-    let mut _crc = crc32::checksum_ieee(&content);
+  fn crc(content: &Vec<u8>) -> Vec<u8> {
+    let mut _crc = crc32::checksum_ieee(content);
     return Img::transform_to_vecu8(_crc);
   }
   fn filtering(data: &mut Vec<u8>, img: &Img) -> Vec<Vec<u8>> {
