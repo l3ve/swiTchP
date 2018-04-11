@@ -32,7 +32,7 @@ impl<'i> Img<'i> {
     data_buffer.drain(..8);
     let chucks = Img::chuck_data(&mut data_buffer);
     let meta_data = Img::get_meta_data(chucks.get("IHDR").unwrap()[0].get("chuck").unwrap());
-    return Img { chucks, meta_data }
+    return Img { chucks, meta_data };
   }
   pub fn create_png(url: &str, meta: &mut Vec<u8>, color: &mut Vec<u8>) -> Result<File> {
     let mut file = File::create(url)?;
@@ -58,7 +58,7 @@ impl<'i> Img<'i> {
     buffer.append(&mut IEND.to_vec());
     buffer.append(&mut Img::crc(&IEND.to_vec()));
     file.write(&buffer)?;
-    return Ok(file)
+    return Ok(file);
   }
   pub fn _zip_png(url: &str, img: &mut Img) -> Result<File> {
     let mut file = File::create(url)?;
@@ -76,7 +76,7 @@ impl<'i> Img<'i> {
       }
     }
     file.write(&buffer)?;
-    return Ok(file)
+    return Ok(file);
   }
   fn get_image_buffer(url: &str) -> Result<Vec<u8>> {
     let mut f = File::open(url)?;
