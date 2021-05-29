@@ -3,7 +3,7 @@ use lzw::{Decoder, Encoder, LsbReader, LsbWriter};
 // use std::fs::File;
 // use std::io::{ Result};
 
-pub fn rgb2binary(rgb: &Vec<u8>) -> [u8; 8] {
+pub fn rgb2binary(rgb: &[u8]) -> [u8; 8] {
   let r = rgb[0];
   let g = rgb[1];
   let b = rgb[2];
@@ -17,7 +17,7 @@ pub fn rgb2binary(rgb: &Vec<u8>) -> [u8; 8] {
   }
   return binary;
 }
-pub fn binary2rgb(binary: &Vec<u8>) -> [u8; 3] {
+pub fn binary2rgb(binary: &[u8]) -> [u8; 3] {
   let mut rgb = [0u8; 3];
   for (i, val) in binary.iter().enumerate() {
     let ii = 7 - i;

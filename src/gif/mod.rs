@@ -7,7 +7,7 @@ use std::{
 mod data;
 mod otree;
 mod tools;
-extern crate image;
+// extern crate image;
 // 取不到 rgb 可以用，data 受保护
 // let mut img = image::open("images/13.jpg").unwrap();
 // let mut rgb = img.as_mut_rgb8().unwrap();
@@ -175,32 +175,32 @@ fn build_based_image_data(lzw: u8, mut data: Vec<u8>) -> Vec<u8> {
 }
 fn build_color_table(data: &mut Vec<u8>) -> Vec<[u8; 8]> {
     // HashMap 是为了优化效率
-    let mut rgb_to_oct: HashMap<Vec<u8>, [u8; 8]> = HashMap::new();
+    let mut rgb_to_oct: HashMap<&[u8], [u8; 8]> = HashMap::new();
     let mut binary_rgb_table: Vec<[u8; 8]> = vec![];
     let mut otree = otree::OTree::new();
 
     if data.len() % 3 != 0 {
         return binary_rgb_table;
     }
-    while data.len() >= 3 {
-        let rgb: Vec<u8> = data.drain(..3).collect();
 
-        match rgb_to_oct.get_mut(&rgb) {
+    for rgb in data.chunks(3) {
+
+        match rgb_to_oct.get(&rgb) {
             Some(binary_color) => {
                 binary_rgb_table.push(binary_color.clone());
                 otree.insert(binary_color);
             }
             None => {
                 // 获取二进制色彩值
-                let binary_color = tools::rgb2binary(&rgb);
+                let binary_color = tools::rgb2binary(rgb);
                 rgb_to_oct.insert(rgb, binary_color);
                 binary_rgb_table.push(binary_color);
                 otree.insert(&binary_color);
             }
         }
     }
-    // println!("rgb_to_oct---{:?}", rgb_to_oct);
-    // println!("otree---{:?}", otree);
+    println!("rgb_to_oct---{:?}", rgb_to_oct);
+    println!("otree---{:?}", otree);
     otree.brief();
     // println!("{:?}", binary_rgb_table);
     return binary_rgb_table;
